@@ -53,6 +53,34 @@ jobs:
             artifacts/bin/coreclr/linux.x64.Release/libclrjit.so
             artifacts/bin/coreclr/linux.x64.Release/System.Private.CoreLib.dll
 
+  osx:
+    name: Build (${{ matrix.target.name }})
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target:
+          - name: osx-x64
+            build-args: '--cross -a x64'
+            release-name: 'osx.x64.Release'
+          - name: osx-arm64
+            build-args: ''
+            release-name: 'osx.arm64.Release'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: ./build.sh clr -c Release ${{ matrix.target.build-args }}
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target.name }}
+          path: |
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/libcoreclr.dylib
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/libclrjit.dylib
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/System.Private.CoreLib.dll
+
 #  release:
 #    name: Create release
 #    if: github.ref_type == 'tag'
