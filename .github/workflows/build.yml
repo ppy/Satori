@@ -1,0 +1,154 @@
+name: Build
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  windows:
+    name: Build (${{ matrix.target.name }})
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        target:
+#         - name: win-x64-debug
+#           configuration: 'Debug'
+#           build-args: ''
+#           release-name: 'windows.x64.Debug'
+#         - name: win-arm64-debug
+#           configuration: 'Debug'
+#           build-args: '-arch arm64'
+#           release-name: 'windows.arm64.Debug'
+          - name: win-x64
+            configuration: 'Release'
+            build-args: ''
+            release-name: 'windows.x64.Release'
+          - name: win-arm64
+            configuration: 'Release'
+            build-args: '-arch arm64'
+            release-name: 'windows.arm64.Release'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: ./build.cmd clr -c ${{ matrix.target.configuration }} ${{ matrix.target.build-args }}
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target.name }}
+          path: |
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/coreclr.dll
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/clrjit.dll
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/System.Private.CoreLib.dll
+
+  linux:
+    name: Build (${{ matrix.target.name }})
+    runs-on: ${{ matrix.target.os }}
+    strategy:
+      matrix:
+        target:
+#         - name: linux-x64-debug
+#           os: ubuntu-22.04
+#           configuration: 'Debug'
+#           build-args: ''
+#           release-name: 'linux.x64.Debug'
+#         - name: linux-arm64-debug
+#           os: ubuntu-22.04-arm
+#           configuration: 'Debug'
+#           build-args: ''
+#           release-name: 'linux.arm64.Debug'
+          - name: linux-x64
+            os: ubuntu-22.04
+            configuration: 'Release'
+            build-args: ''
+            release-name: 'linux.x64.Release'
+          - name: linux-arm64
+            os: ubuntu-22.04-arm
+            configuration: 'Release'
+            build-args: ''
+            release-name: 'linux.arm64.Release'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # https://github.com/dotnet/runtime/blob/main/docs/workflow/requirements/linux-requirements.md#debian-and-ubuntu
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y \
+            cmake llvm lld clang build-essential \
+            python-is-python3 curl git lldb libicu-dev liblttng-ust-dev \
+            libssl-dev libkrb5-dev ninja-build pigz cpio
+
+      - name: Build
+        run: ./build.sh clr -c ${{ matrix.target.configuration }} ${{ matrix.target.build-args }}
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target.name }}
+          path: |
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/libcoreclr.so
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/libclrjit.so
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/System.Private.CoreLib.dll
+
+  osx:
+    name: Build (${{ matrix.target.name }})
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        target:
+#         - name: osx-x64-debug
+#           configuration: 'Debug'
+#           build-args: '--cross -a x64'
+#           release-name: 'osx.x64.Debug'
+#         - name: osx-arm64-debug
+#           configuration: 'Debug'
+#           build-args: ''
+#           release-name: 'osx.arm64.Debug'
+          - name: osx-x64
+            configuration: 'Release'
+            build-args: '--cross -a x64'
+            release-name: 'osx.x64.Release'
+          - name: osx-arm64
+            configuration: 'Release'
+            build-args: ''
+            release-name: 'osx.arm64.Release'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build
+        run: ./build.sh clr -c ${{ matrix.target.configuration }} ${{ matrix.target.build-args }}
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target.name }}
+          path: |
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/libcoreclr.dylib
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/libclrjit.dylib
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/System.Private.CoreLib.dll
+
+  release:
+    name: Create release
+    if: github.ref_type == 'tag'
+    needs: [ windows, linux, osx ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Package
+        run: |
+          for dir in */; do
+            zip "${dir%/}.zip" ${dir}*
+          done
+
+      - name: Release
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
+        with:
+          files: '*.zip'
