@@ -6,24 +6,33 @@ on:
       - '*'
 
 jobs:
-  win-x64:
-    name: Build (win-x64)
+  windows:
+    name: Build (${{ matrix.target.name }})
     runs-on: windows-latest
+    strategy:
+      matrix:
+        target:
+          - name: win-x64
+            build-args: ''
+            release-name: 'windows.x64.Release'
+          - name: win-arm64
+            build-args: '-arch arm64'
+            release-name: 'windows.arm64.Release'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Build
-        run: ./build.cmd clr -c Release
+        run: ./build.cmd clr -c Release ${{ matrix.target.build-args }}
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: win-x64
+          name: ${{ matrix.target.name }}
           path: |
-            artifacts/bin/coreclr/windows.x64.Release/coreclr.dll
-            artifacts/bin/coreclr/windows.x64.Release/clrjit.dll
-            artifacts/bin/coreclr/windows.x64.Release/System.Private.CoreLib.dll
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/coreclr.dll
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/clrjit.dll
+            artifacts/bin/coreclr/${{ matrix.target.release-name }}/System.Private.CoreLib.dll
 
   linux:
     name: Build (${{ matrix.target.name }})
@@ -93,7 +102,7 @@ jobs:
   release:
     name: Create release
     if: github.ref_type == 'tag'
-    needs: [ win-x64, linux, osx ]
+    needs: [ windows, linux, osx ]
     runs-on: ubuntu-latest
     steps:
       - name: Download (win-x64)
@@ -101,6 +110,12 @@ jobs:
         with:
           name: win-x64
           path: win-x64
+
+      - name: Download (win-arm64)
+        uses: actions/download-artifact@v4
+        with:
+          name: win-arm64
+          path: win-arm64
 
       - name: Download (linux-x64)
         uses: actions/download-artifact@v4
@@ -129,6 +144,7 @@ jobs:
       - name: Package
         run: |
           zip win-x64.zip win-x64/*
+          zip win-arm64.zip win-arm64/*
           zip linux-x64.zip linux-x64/*
           zip linux-arm64.zip linux-arm64/*
           zip osx-x64.zip osx-x64/*
@@ -139,6 +155,7 @@ jobs:
         with:
           files: |
             win-x64.zip
+            win-arm64.zip
             linux-x64.zip
             linux-arm64.zip
             osx-x64.zip
