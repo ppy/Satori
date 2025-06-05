@@ -145,7 +145,7 @@ jobs:
       - name: Package
         run: |
           for dir in */; do
-            zip -r "${dir%/}.zip" "${dir}"
+            zip "${dir%/}.zip" ${dir}*
           done
 
       - name: Release
