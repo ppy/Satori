@@ -12,14 +12,14 @@ jobs:
     strategy:
       matrix:
         target:
-          - name: win-x64-debug
-            configuration: 'Debug'
-            build-args: ''
-            release-name: 'windows.x64.Debug'
-          - name: win-arm64-debug
-            configuration: 'Debug'
-            build-args: '-arch arm64'
-            release-name: 'windows.arm64.Debug'
+#         - name: win-x64-debug
+#           configuration: 'Debug'
+#           build-args: ''
+#           release-name: 'windows.x64.Debug'
+#         - name: win-arm64-debug
+#           configuration: 'Debug'
+#           build-args: '-arch arm64'
+#           release-name: 'windows.arm64.Debug'
           - name: win-x64
             configuration: 'Release'
             build-args: ''
@@ -50,16 +50,16 @@ jobs:
     strategy:
       matrix:
         target:
-          - name: linux-x64-debug
-            os: ubuntu-22.04
-            configuration: 'Debug'
-            build-args: ''
-            release-name: 'linux.x64.Debug'
-          - name: linux-arm64-debug
-            os: ubuntu-22.04-arm
-            configuration: 'Debug'
-            build-args: ''
-            release-name: 'linux.arm64.Debug'
+#         - name: linux-x64-debug
+#           os: ubuntu-22.04
+#           configuration: 'Debug'
+#           build-args: ''
+#           release-name: 'linux.x64.Debug'
+#         - name: linux-arm64-debug
+#           os: ubuntu-22.04-arm
+#           configuration: 'Debug'
+#           build-args: ''
+#           release-name: 'linux.arm64.Debug'
           - name: linux-x64
             os: ubuntu-22.04
             configuration: 'Release'
@@ -101,14 +101,14 @@ jobs:
     strategy:
       matrix:
         target:
-          - name: osx-x64-debug
-            configuration: 'Debug'
-            build-args: '--cross -a x64'
-            release-name: 'osx.x64.Debug'
-          - name: osx-arm64-debug
-            configuration: 'Debug'
-            build-args: ''
-            release-name: 'osx.arm64.Debug'
+#         - name: osx-x64-debug
+#           configuration: 'Debug'
+#           build-args: '--cross -a x64'
+#           release-name: 'osx.x64.Debug'
+#         - name: osx-arm64-debug
+#           configuration: 'Debug'
+#           build-args: ''
+#           release-name: 'osx.arm64.Debug'
           - name: osx-x64
             configuration: 'Release'
             build-args: '--cross -a x64'
